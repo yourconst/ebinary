@@ -23,13 +23,14 @@ import { Encoder, Type } from 'ebinary';
 const encoder = new Encoder(Type.Array(Type.Struct({
     id: Type.UInt32(),
     count: Type.UInt16(),
-    enabled: Type.Nullable(Type.Bool()),
+    enabled: Type.Optional(Type.Bool()),
 })));
 
 const buffer = encoder.encode([
     { id: 1, count: 123, enabled: null },
     { id: 2, count: 756, enabled: true },
     { id: 3, count: 435, enabled: false },
+    { id: 1, count: 345 },
 ]);
 
 const value = encoder.decode(buffer);
