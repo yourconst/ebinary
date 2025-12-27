@@ -4,7 +4,7 @@
 # Builded files
 /dist
 /dist_test
-*.js
+/tests/**/*.js
 
 # 
 .DS_Store

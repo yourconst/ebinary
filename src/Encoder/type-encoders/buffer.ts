@@ -2,7 +2,6 @@ import { TypeEncoder } from '../TypeEncoder.interface';
 import * as Types from '../../types/types';
 import { BufferPointer } from '../BufferPointer';
 import { parseLengthSchema, parseSchema } from '.';
-import { BinaryBuffer } from '../BinaryBuffer';
 
 export function getArrayBuffer(buffer: Uint8Array) {
     return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
@@ -20,9 +19,9 @@ export class _te_buffer implements TypeEncoder<Uint8Array> {
         return this._lengthType.getSize(value.length) + value.length;
     }
 
-    checkGetSize(value: Uint8Array, path: string) {
+    validateGetSize(value: Uint8Array) {
         if (!(value instanceof Uint8Array)) {
-            throw new Error(`Is not Uint8Array (${path}, value: ${value})`, { cause: value });
+            throw new Error(`Is not Uint8Array`, { cause: value });
         }
         
         return this.getSize(value);

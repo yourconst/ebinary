@@ -5,8 +5,8 @@ import { parseLengthSchema, parseSchema } from '.';
 
 export class _te_array implements TypeEncoder {
     readonly isSizeFixed: boolean;
-    private readonly _lengthType: TypeEncoder<number>;
-    private readonly _child: TypeEncoder;
+    readonly _lengthType: TypeEncoder<number>;
+    readonly _child: TypeEncoder;
 
     readonly getSize: (value: any[]) => number;
 
@@ -29,26 +29,40 @@ export class _te_array implements TypeEncoder {
         }
     }
 
-    checkGetSize(value: any[], path: string) {
+    validateGetSize(value: any[]) {
         if (!Array.isArray(value)) {
-            throw new Error(`Is not array (${path}, value: ${value})`, { cause: value });
+            throw new Error(`Is not array`, { cause: value });
         }
         return value.reduce(
-            (acc, el, index) => acc + this._child.checkGetSize(el, path + `[${index}]`),
-            this._lengthType.checkGetSize(value.length, path + '.length'),
+            (acc, el, index) => acc + this._child.validateGetSize(el),
+            this._lengthType.validateGetSize(value.length),
         );
     }
 
     encode(bp: BufferPointer, value: any[]) {
         this._lengthType.encode(bp, value.length);
 
-        for (let i = 0; i < value.length; ++i) {
-            this._child.encode(bp, value[i]);
-        }
+        // slower (tested for numbers)
+        value.forEach(v => this._child.encode(bp, v));
+
+        // for (let i = 0; i < value.length; ++i) {
+        //     this._child.encode(bp, value[i]);
+        // }
     }
 
     decode(bp: BufferPointer) {
-        const res = new Array(this._lengthType.decode(bp));
+        const length = this._lengthType.decode(bp);
+        const res = new Array(length);
+
+        for (let i = 0; i < length; ++i) {
+            res[i] = this._child.decode(bp);
+        }
+
+        return res;
+    }
+
+    decodeInto(bp: BufferPointer, res: any[]) {
+        res.length = this._lengthType.decode(bp);
 
         for (let i = 0; i < res.length; ++i) {
             res[i] = this._child.decode(bp);

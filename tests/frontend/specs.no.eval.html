@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Ebinary Tests (NO EVAL)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.2.0/mocha.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #mocha {
+            margin: 20px 0;
+        }
+        .test-results {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ebinary Tests (NO EVAL)</h1>
+    <div id="mocha"></div>
+    <div class="test-results">
+        <h3>Test Results</h3>
+        <div id="results"></div>
+    </div>
+
+    <!-- Load Mocha -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.2.0/mocha.js"></script>
+
+    <!-- Load Chai -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.7/chai.js"></script>
+
+    <!-- Configure Mocha -->
+    <script>
+        // Configure Mocha
+        mocha.setup('bdd');
+
+        // Make Chai available globally
+        window.expect = chai.expect;
+
+        // Setup NO_EVAL environment handling for browser
+        if (window.location.search.includes('noeval=true')) {
+            if (globalThis.Function) {
+                globalThis.Function = null;
+                console.log('NO_EVAL mode enabled');
+            }
+        }
+        
+        // Override describe to add NO_EVAL prefix when needed
+        const originalDescribe = globalThis.describe;
+        const prefix = window.location.search.includes('noeval=true') ? 'NO_EVAL: ' : '';
+
+        globalThis.describe = function (param1, fn) {
+            if (typeof param1 === 'string') {
+                param1 = `${prefix}${param1}`;
+            }
+            return originalDescribe(param1, fn);
+        };
+
+        globalThis.describe.only = originalDescribe.only;
+        globalThis.describe.skip = originalDescribe.skip;
+        globalThis.describe.each = originalDescribe.each;
+    </script>
+
+    <script>
+        globalThis.Function = null;
+    </script>
+
+    <!-- Load the bundled tests -->
+    <script src="specs.bundle.js"></script>
+
+    <!-- Run tests -->
+    <script>
+        // Run tests after everything is loaded
+        window.addEventListener('load', function() {
+            // Wait a bit for all test files to load
+            setTimeout(function() {
+                const runner = mocha.run();
+
+                // Display results
+                runner.on('end', function() {
+                    const results = document.getElementById('results');
+                    const stats = runner.stats;
+
+                    results.innerHTML = `
+                        <p><strong>Total Tests:</strong> ${stats.tests}</p>
+                        <p><strong>Passed:</strong> <span style="color: green;">${stats.passes}</span></p>
+                        <p><strong>Failed:</strong> <span style="color: red;">${stats.failures}</span></p>
+                        <p><strong>Duration:</strong> ${stats.duration}ms</p>
+                    `;
+                });
+            }, 500);
+        });
+    </script>
+</body>
+</html>

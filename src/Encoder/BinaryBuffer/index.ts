@@ -91,14 +91,13 @@ export interface BinaryBufferConstructor {
     //  */
     // new(buffer: BinaryBuffer): BinaryBuffer;
 
-    from(src: ArrayBufferLike | ArrayLike<number>): BinaryBuffer;
+    from(src: ArrayBuffer, byteOffset?: number, byteLength?: number): BinaryBuffer;
     from(src: string, encoding?: _StringEncoding): BinaryBuffer;
+    from(src: ArrayLike<number>): BinaryBuffer;
     allocUnsafe(size: number): BinaryBuffer;
     byteLength(src: string, encoding?: _StringEncoding): number;
     // concat(list: ReadonlyArray<Uint8Array>): BinaryBuffer;
 }
-
-export type BinaryBufferLike = ArrayBufferLike | ArrayLike<number> | string;
 
 // declare var BinaryBuffer: BinaryBufferConstructor;
 
@@ -126,36 +125,34 @@ const getEncoder = (encoding: _StringEncoding = 'utf8') => {
 
 const allocUnsafe = _native.allocUnsafe;
 class BinaryBufferLE extends Uint8Array implements BinaryBuffer {
-    static from(arg: any, ...params: any[]) {
-        if (arg instanceof this) {
-            return arg;
-        } else if (arg instanceof ArrayBuffer) {
-            return new this(arg, ...params);
-        } else if (arg?.buffer instanceof ArrayBuffer) {
-            return new this(arg.buffer, arg.byteOffset, arg.length);
-        } else if (typeof arg === 'string') {
+    static from(source: any, ...params: any[]) {
+        if (source.buffer instanceof ArrayBuffer) {
+            return new this(source.buffer, source.byteOffset, source.byteLength);
+        } else if (source instanceof ArrayBuffer) {
+            return new this(source, ...params);
+        } else if (typeof source === 'string') {
             const encoder = getEncoder(params[0]);
-            const size = encoder.byteLength(arg);
+            const size = encoder.byteLength(source);
             const buf = this.allocUnsafe(size);
-            encoder.encodeInto(buf, arg, 0);
-            // return new this(new TextEncoder().encode(arg).buffer);
+            encoder.encodeInto(buf, source, 0);
+            // return new this(new TextEncoder().encode(source).buffer);
             return buf;
-        } else if (Array.isArray(arg)) {
-            return new this(arg);
+        } else if (Array.isArray(source)) {
+            return new this(source);
         } else {
-            throw new Error('Bad params', { cause: params });
+            throw new Error('Bad args', { cause: [source, ...params] });
         }
     }
 
-    static allocUnsafe = allocUnsafe ?
-        function (size: number) {
+    static allocUnsafe = allocUnsafe
+        ? function (size: number) {
             if (size < 256) {
                 return new this(size);
             }
             const b = allocUnsafe(size);
             return new this(b.buffer, b.byteOffset, b.byteLength);
-        } :
-        function (size: number) {
+        }
+        : function (size: number) {
             return new this(size);
         };
 
@@ -625,7 +622,7 @@ BinaryBufferBE.prototype.writeDoubleLE = BinaryBufferLE.prototype.writeDoubleBE;
 
 
 
-let _BBC: BinaryBufferConstructor = _native.Buffer;
+let _BBC: BinaryBufferConstructor = _native.Buffer as any;
 let _CBBC: BinaryBufferConstructor;
 
 if (_native.endian === 'le') {

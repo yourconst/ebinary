@@ -2,6 +2,8 @@ import { TypeEncoder } from '../TypeEncoder.interface';
 import * as Types from '../../types/types';
 import { BufferPointer } from '../BufferPointer';
 
+const temp = new Uint32Array(1);
+
 const maxUInt32 = (2 ** 32) - 1;
 
 // const getSize = (value: number) => Math.ceil((Math.log2(value < 2 ? 2 : value + 1) / 7));
@@ -21,9 +23,9 @@ export class _te_uvarint32 implements TypeEncoder<number> {
         return getSize(value);
     }
 
-    checkGetSize(value: number, path: string) {
+    validateGetSize(value: number) {
         if (!isFinite(value) || value < 0 || maxUInt32 < value || Math.trunc(value) !== value) {
-            throw new Error(`Is not uint32 (${path}, value: ${value})`, { cause: value });
+            throw new Error(`Is not uint32`, { cause: value });
         }
 
         return getSize(value);
@@ -51,19 +53,34 @@ export class _te_uvarint32 implements TypeEncoder<number> {
         // }
     }
 
+    // decode(bp: BufferPointer) {
+    //     let result = 0;
+    //     let shift = 0;
+
+    //     while (true) {
+    //         const byte = bp.readByte();
+    //         result |= (byte & 127) << shift;
+    //         if ((byte & 128) == 0)
+    //             break;
+    //         shift += 7;
+    //     }
+
+    //     return result;
+    // }
+
     decode(bp: BufferPointer) {
-        let result = 0;
+        temp[0] = 0;
         let shift = 0;
 
         while (true) {
             const byte = bp.readByte();
-            result |= (byte & 127) << shift;
+            temp[0] |= (byte & 127) << shift;
             if ((byte & 128) == 0)
                 break;
             shift += 7;
         }
 
-        return result;
+        return temp[0];
     }
 
     getSchema(): Types.Schema {

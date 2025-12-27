@@ -1,10 +1,11 @@
 import type { BinaryBuffer } from '..';
-import { BufferPointer } from '../../BufferPointer';
 import { _native } from '../_native';
 
-export const byteLength = (src: string) => {
+export const _byteLength = (src: string) => {
     return src.length;
 }
+
+export const byteLength = _byteLength;
 
 export const _encodeInto = (buf: Uint8Array, str: string, offset = 0) => {
     for (let i = 0; i < str.length; ++i) {
@@ -34,7 +35,7 @@ export const encode = (src: string, units = src.length) => {
 // We go 1 magnitude less, for safety
 const MAX_ARGUMENTS_LENGTH = 0x1000;
 
-export const decode = (buf: Uint8Array, start = 0, end = buf.length) => {
+export const _decode = (buf: Uint8Array, start = 0, end = buf.length) => {
     end = Math.min(buf.length, end);
 
     if (end - start < MAX_ARGUMENTS_LENGTH) {
@@ -63,3 +64,5 @@ export const decode = (buf: Uint8Array, start = 0, end = buf.length) => {
     // return res.join('');
     return res;
 }
+
+export const decode = _decode;

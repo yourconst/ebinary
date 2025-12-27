@@ -11,9 +11,9 @@ export class _te_bool implements TypeEncoder<boolean> {
         return 1;
     }
 
-    checkGetSize(value: boolean, path: string) {
+    validateGetSize(value: boolean) {
         if (typeof value !== 'boolean') {
-            throw new Error(`Is not boolean (${path}, value: ${value})`, { cause: value });
+            throw new Error(`Is not boolean`, { cause: value });
         }
 
         return 1;

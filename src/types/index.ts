@@ -113,18 +113,13 @@ export const EnumInv = <T extends string>(
     bigIndexType,
 });
 
-export const Nullable = <S extends Types.Schema>(
+export const Optional = <S extends Types.Schema>(
     child: S,
+    defaultValue?: Types.SchemaResultType<S> | null,
 ) => ({
-    type: <'nullable'> 'nullable',
+    type: <'optional'> 'optional',
     child,
-});
-
-export const UNullable = <S extends Types.Schema>(
-    child: S,
-) => ({
-    type: <'unullable'> 'unullable',
-    child,
+    defaultValue,
 });
 
 export const Aligned = <S extends Types.Schema>(
@@ -136,15 +131,72 @@ export const Aligned = <S extends Types.Schema>(
     child,
 });
 
-export const Transform = <S extends Types.Schema, RT>(
+export const LowCardinality: {
+    <S extends (Types.Schema & (Types.String | Exclude<Types.SchemaNumber, Types.UInt8 | Types.Int8>))>(
+        child: S,
+        group?: string | number,
+        refType?: Types.LowCardinality['refType'],
+    ): {
+        type: 'low_cardinality';
+        child: S;
+        group?: string | number;
+        refType?: Types.LowCardinality['refType'];
+    };
+    <S extends Types.Schema>(
+        child: S,
+        getKey: (value: Types.SchemaResultType<S>) => string | number,
+        group?: string | number,
+        refType?: Types.LowCardinality['refType'],
+    ): {
+        type: 'low_cardinality';
+        child: S;
+        group?: string | number;
+        refType?: Types.LowCardinality['refType'];
+        getKey?: Types.LowCardinality['getKey'];
+    };
+} = (
+    child: Types.Schema,
+    a1?: any,
+    a2?: any,
+    a3?: any,
+) => typeof a1 === 'function' ?
+({
+    type: <'low_cardinality'> 'low_cardinality',
+    child,
+    getKey: a1,
+    group: a2,
+    refType: a3,
+}) :
+({
+    type: <'low_cardinality'> 'low_cardinality',
+    child,
+    group: a1,
+    refType: a2,
+});
+
+export const Transform = <S extends Types.Schema>(
     child: S,
     options: {
-        encode: (decoded: RT) => Types.SchemaResultType<S>,
-        decode: (encoded: Types.SchemaResultType<S>) => RT,
+        /**
+         * if `true` setted `encode` function will called once in `sizing` traverse
+         * and its result will cached for (second) `encoding` traverse.
+         * 
+         * In other case `encode` will called twice.
+         * 
+         * Use `true` for heavy transformations.
+         * 
+         * */
+        cache?: boolean;
+        encode: Bivariant<(decoded: any) => Types.SchemaResultType<S>>;
+        decode: Bivariant<(encoded: Types.SchemaResultType<S>) => any>;
     },
 ) => ({
     type: <'transform'> 'transform',
     child,
+    cache: options.cache,
     encode: options.encode,
     decode: options.decode,
 });
+
+// Enable bivariance for function parameter types to relax callback assignability in options
+type Bivariant<T> = { bivarianceHack: T }[keyof { bivarianceHack: T }];

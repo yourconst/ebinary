@@ -18,7 +18,7 @@ export class _te_one_of implements TypeEncoder<Record<string, any>> {
 
         const count = this._indexValue.length;
 
-        if (count < 2) {
+        if (count < 1) {
             throw new Error('Not enough enum unique values', { cause: schema });
         }
 
@@ -37,26 +37,26 @@ export class _te_one_of implements TypeEncoder<Record<string, any>> {
         return this._type.getSize(r.index) + r.type.getSize(value[key]);
     }
 
-    checkGetSize(value: Record<string, any>, path: string) {
+    validateGetSize(value: Record<string, any>) {
         if (!(value instanceof Object)) {
-            throw new Error(`Is not object (${path}, value: ${value})`, { cause: value });
+            throw new Error(`Is not object`, { cause: value });
         }
 
         const keys = Object.keys(value);
         if (keys.length !== 1) {
-            throw new Error(`Is not single-property object (${path}, value: ${value})`, { cause: value });
+            throw new Error(`Is not single-property object`, { cause: value });
         }
 
         const key = keys[0];
         const r = this._valueIndex.get(key);
         if (r === undefined) {
-            throw new Error(`Has unknown property (${path}, value: ${value}, property: ${key})`, { cause: {
+            throw new Error(`Has unknown property`, { cause: {
                 value,
                 allowedProperties: [...this._valueIndex.keys()],
             } });
         }
         
-        return this._type.checkGetSize(r.index, path) + r.type.checkGetSize(value[key], path + `.${key}`);
+        return this._type.validateGetSize(r.index) + r.type.validateGetSize(value[key]);
     }
 
     encode(bp: BufferPointer, value: any) {

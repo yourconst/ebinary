@@ -11,21 +11,12 @@ export class _te_const<T = any> implements TypeEncoder<T> {
     }
 
     getSize(value: T) {
-        if (value !== this.constValue) {
-            throw new Error(`Value not equals to const value (value: ${value}, constValue: ${this.constValue})`, {
-                cause: {
-                    constValue: this.constValue,
-                    value,
-                },
-            });
-        }
-
         return 0;
     }
 
-    checkGetSize(value: T, path: string) {
+    validateGetSize(value: T) {
         if (value !== this.constValue) {
-            throw new Error(`Value not equals to const value (${path}, value: ${value}, constValue: ${this.constValue})`, {
+            throw new Error(`Value not equals to const value`, {
                 cause: {
                     constValue: this.constValue,
                     value,

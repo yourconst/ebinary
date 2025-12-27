@@ -4,7 +4,7 @@ import { BufferPointer } from '../BufferPointer';
 import { parseLengthSchema, parseSchema } from '.';
 
 export class _te_enum implements TypeEncoder {
-    readonly isSizeFixed = true;
+    readonly isSizeFixed: boolean;
     readonly _valueIndex: Map<any, number>;
     readonly _indexValue: any[];
     readonly _type: TypeEncoder<number>;
@@ -16,30 +16,32 @@ export class _te_enum implements TypeEncoder {
 
         const count = this._indexValue.length;
 
-        if (count < 2) {
+        if (count < 1) {
             throw new Error('Not enough enum unique values', { cause: schema });
         }
 
         if (count <= (1 << 8)) {
             this._type = parseLengthSchema('uint8');
+            this.isSizeFixed = true;
         } else if (count <= (1 << 16)) {
             this._type = parseLengthSchema(schema.bigIndexType ?? 'uvarint32');
+            this.isSizeFixed = this._type.isSizeFixed;
         } else {
             throw new Error('Too many unique values for enum', { cause: schema });
         }
     }
 
     getSize(value: any) {
-        return this._type.getSize(null);
+        return this._type.getSize(this._valueIndex.get(value));
     }
 
-    checkGetSize(value: any, path: string) {
+    validateGetSize(value: any) {
         if (!this._valueIndex.has(value)) {
-            throw new Error(`Is not enum value (${path}, value: ${value})`, { cause: value });
+            throw new Error(`Is not enum value`, { cause: value });
         }
 
         // Because it is static
-        return this._type.getSize(null);
+        return this._type.getSize(this._valueIndex.get(value));
     }
 
     encode(bp: BufferPointer, value: any) {

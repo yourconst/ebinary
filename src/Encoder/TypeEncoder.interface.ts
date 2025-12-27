@@ -1,15 +1,14 @@
 import { Schema } from '../types';
-import { BinaryBuffer } from './BinaryBuffer';
 import { BufferPointer } from './BufferPointer';
 
 export interface TypeEncoder<T = any> {
     readonly schema: Schema;
-    readonly isSizeFixed?: boolean;
+    readonly isSizeFixed: boolean;
     readonly isConst?: boolean;
     readonly constValue?: T;
 
     getSize(value: T): number;
-    checkGetSize(value: T, path: string): number;
+    validateGetSize(value: T): number;
 
     encode(bp: BufferPointer, value: T): void;
     decode(bp: BufferPointer): T;

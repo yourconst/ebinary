@@ -1,4 +1,4 @@
-import { Endian } from "../../types";
+import type { Endian } from "../../types";
 import { _StringEncoding } from "../../types/types";
 import type { StringDecoder } from "node:string_decoder";
 
@@ -7,7 +7,7 @@ function isFunctionNative(f: Function) {
 }
 
 function checkFNAndTryGet(f: Function): any {
-    return f && isFunctionNative(f) ? f : null;
+    return f/*  && isFunctionNative(f) */ ? f : null;
 }
 
 function getDeviceEndian(): Endian {
@@ -31,7 +31,7 @@ export const _native: {
     readonly endian: Endian;
     readonly Buffer?: BufferConstructor;
     readonly StringDecoder?: typeof StringDecoder;
-    readonly tryCreateStringDecoder: (encoding: _StringEncoding) => StringDecoder;
+    readonly tryCreateStringDecoder: (encoding: _StringEncoding) => StringDecoder | null;
     readonly allocUnsafe?: (size: number) => Buffer;
     readonly byteLength?: BufferConstructor['byteLength'];
     readonly encoders: {

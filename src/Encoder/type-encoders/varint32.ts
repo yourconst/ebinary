@@ -29,9 +29,9 @@ export class _te_varint32 implements TypeEncoder<number> {
         return getSize(value);
     }
 
-    checkGetSize(value: number, path: string) {
+    validateGetSize(value: number) {
         if (!isFinite(value) || value < minInt32 || maxInt32 < value || Math.trunc(value) !== value) {
-            throw new Error(`Is not int32 (${path}, value: ${value})`, { cause: value });
+            throw new Error(`Is not int32`, { cause: value });
         }
         
         return getSize(value);

@@ -1,3 +1,5 @@
+import type { Buffer as NativeBuffer } from 'buffer';
+
 export type UInt8 = 'uint8';
 export type Int8 = 'int8';
 export type UInt16 = 'uint16_le' | 'uint16_be';
@@ -71,14 +73,18 @@ export type Enum = {
     bigIndexType?: UVarInt32 | UInt16;
 };
 
-export type Nullable = {
-    type: 'nullable';
+export type Optional = {
+    type: 'optional';
     child: Schema;
+    defaultValue?: any;
 };
 
-export type UNullable = {
-    type: 'unullable';
-    child: Schema;
+export type LowCardinality = {
+    type: 'low_cardinality';
+    child: Schema/*  & (String | Exclude<SchemaNumber, UInt8 | Int8>) */;
+    refType?: _Length | UInt64;
+    group?: string | number;
+    getKey?: (v: any) => string | number;
 };
 
 export type __Align = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
@@ -93,6 +99,7 @@ export type Aligned = {
 export type Transform = {
     type: 'transform';
     child: Schema;
+    cache?: boolean;
     encode: (decoded: any) => any;
     decode: (encoded: any) => any;
 };
@@ -107,12 +114,48 @@ export type SchemaVarInt = UVarInt32 | VarInt32;
 export type SchemaNumber = SchemaStandardNumber | SchemaVarInt;
 
 export type SchemaSimple = SchemaNumber | Bool;
-export type SchemaComplex = Const | Aligned | String | Buffer | Array | Struct | OneOf | Enum | Nullable | UNullable | Transform;
+export type SchemaComplex = Const | Aligned | String | LowCardinality | Buffer | Array | Struct | OneOf | Enum | Optional | Transform;
 
 export type Schema = SchemaSimple | SchemaComplex;
 
 // type IfAny<T, Y, N> = 0 extends (1 & T) ? Y : N; 
 // type IsNotAny<T> = IfAny<T, never, true>;
+
+
+// type _Depth = 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0;
+// type _Dec<D extends _Depth> =
+//     D extends 10 ? 9 : D extends 9 ? 8 : D extends 8 ? 7 : D extends 7 ? 6 : D extends 6 ? 5 :
+//     D extends 5 ? 4 : D extends 4 ? 3 : D extends 3 ? 2 : D extends 2 ? 1 : D extends 1 ? 0 : 0;
+
+// export type SchemaResultType<S extends Schema> = _SchemaResultType<S, 10>;
+
+// type _SchemaResultType<S extends Schema, D extends _Depth> =
+//     // IsNotAny<S> extends never ? unknown :
+//     0 extends (1 & S) ? unknown :
+//     S extends Const ? S['value'] :
+//     S extends SchemaBigInt ? bigint :
+//     S extends SchemaNumber ? number :
+//     S extends String ? string :
+//     S extends Buffer ? (Uint8Array | NativeBuffer) :
+//     S extends Bool ? boolean :
+//     D extends 0 ? unknown :
+//     S extends LowCardinality ? _SchemaResultType<S['child'], _Dec<D>> :
+//     S extends Aligned ? _SchemaResultType<S['child'], _Dec<D>> :
+//     // S extends OneOf ? SchemaResultType<S['childs'][number]> :
+//     S extends Transform ? ReturnType<S['decode']> :
+//     S extends Optional ? null | _SchemaResultType<S['child'], _Dec<D>> :
+//     S extends Array ? _SchemaResultType<S['child'], _Dec<D>>[] :
+//     S extends Struct ? (
+//         S extends { fields: Record<string, Schema> } ?
+//             { [key in keyof S['fields']]: _SchemaResultType<S['fields'][key], _Dec<D>> } :
+//             Record<string, unknown>
+//     ) :
+//     S extends OneOf ? {
+//         [key in keyof S['fields']]?: _SchemaResultType<S['fields'][key], _Dec<D>>
+//     } :
+//     S extends Enum ? S['values'][number] :
+//     unknown;
+
 
 export type SchemaResultType<S extends Schema> =
     // IsNotAny<S> extends never ? unknown :
@@ -123,11 +166,11 @@ export type SchemaResultType<S extends Schema> =
     S extends String ? string :
     S extends Buffer ? Uint8Array :
     S extends Bool ? boolean :
+    S extends LowCardinality ? SchemaResultType<S['child']> :
     S extends Aligned ? SchemaResultType<S['child']> :
     // S extends OneOf ? SchemaResultType<S['childs'][number]> :
     S extends Transform ? Parameters<S['encode']>[0] :
-    S extends Nullable ? null | SchemaResultType<S['child']> :
-    S extends UNullable ? undefined | null | SchemaResultType<S['child']> :
+    S extends Optional ? null | undefined | SchemaResultType<S['child']> :
     S extends Array ? SchemaResultType<S['child']>[] :
     S extends Struct ?
         S['orderedFields'] extends [] ? {

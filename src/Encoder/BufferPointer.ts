@@ -1,4 +1,4 @@
-import { BinaryBuffer, BinaryBufferLike } from './BinaryBuffer';
+import { BinaryBuffer } from './BinaryBuffer';
 
 export class BufferPointer {
     constructor(readonly buffer: BinaryBuffer, private _ptr = 0) {}
@@ -31,5 +31,26 @@ export class BufferPointer {
 
     readByte() {
         return this.buffer[this._ptr++];
+    }
+
+    writeBit(bit: 0 | 1 | boolean, byteOffset: number, bitOffset: number) {
+        byteOffset += bitOffset >>> 3;
+        bitOffset %= 8;
+        this.buffer[byteOffset] = (this.buffer[byteOffset] & (~(1 << bitOffset))) | ((<number>bit) << bitOffset);
+        return this;
+    }
+
+    writeBit1(byteOffset: number, bitOffset: number) {
+        this.buffer[byteOffset + (bitOffset >>> 3)] |= 1 << (bitOffset % 8);
+        return this;
+    }
+
+    writeBit0(byteOffset: number, bitOffset: number) {
+        this.buffer[byteOffset + (bitOffset >>> 3)] &= ~(1 << (bitOffset % 8));
+        return this;
+    }
+
+    readBit(byteOffset: number, bitOffset: number) {
+        return (this.buffer[byteOffset + (bitOffset >>> 3)] >>> (bitOffset % 8)) & 1;
     }
 }

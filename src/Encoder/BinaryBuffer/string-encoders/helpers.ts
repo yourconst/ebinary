@@ -6,7 +6,7 @@ const MAX_ARGUMENTS_LENGTH = 0x1000;
 export const decodeCodePointsArray = (codePoints: number[] | Uint8Array | Uint16Array) => {
     const len = codePoints.length;
     if (len <= MAX_ARGUMENTS_LENGTH) {
-        return String.fromCharCode.apply(String, codePoints); // avoid extra slice()
+        return String.fromCharCode.apply(String, codePoints) as string; // avoid extra slice()
     }
 
     // Decode in chunks to avoid "call stack size exceeded".

@@ -1,3 +1,2 @@
-export * from './Measuring';
-export * from './test';
-export * from './other';
+export * as Helpers from './helpers';
+export * from './Test';

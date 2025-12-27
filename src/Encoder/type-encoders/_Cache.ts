@@ -7,6 +7,14 @@ export class Cache<T = any> {
         this._index = -1;
     }
 
+    getPosition() {
+        return this._index + 1;
+    }
+
+    setPosition(i: number) {
+        this._index = i - 1;
+    }
+
     add(value: T) {
         this._cache.push(value);
     }

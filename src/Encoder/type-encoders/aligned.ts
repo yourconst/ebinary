@@ -41,8 +41,8 @@ export class _te_aligned implements TypeEncoder {
         }
     }
 
-    checkGetSize(value: any, path: string) {
-        const _childSize = this._child.checkGetSize(value, path);
+    validateGetSize(value: any) {
+        const _childSize = this._child.validateGetSize(value);
         return _childSize + getAlignOffset(_childSize, this._align);
     }
 

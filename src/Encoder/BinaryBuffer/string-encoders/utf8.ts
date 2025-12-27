@@ -1,39 +1,31 @@
-import { StringDecoder } from 'string_decoder';
 import type { BinaryBuffer } from '..';
-import { BufferPointer } from '../../BufferPointer';
 import { _native } from '../_native';
 import { decodeCodePointsArray } from './helpers';
 
-export const byteLength = (s: string) => {
-    //assuming the String is UCS-2(aka UTF-16) encoded
-    var n = 0;
-    for (var i = 0, l = s.length; i < l; i++) {
-        var hi = s.charCodeAt(i);
-        if (hi < 0x0080) { //[0x0000, 0x007F]
-            n += 1;
-        } else if (hi < 0x0800) { //[0x0080, 0x07FF]
-            n += 2;
-        } else if (hi < 0xD800) { //[0x0800, 0xD7FF]
-            n += 3;
-        } else if (hi < 0xDC00) { //[0xD800, 0xDBFF]
-            var lo = s.charCodeAt(++i);
-            if (i < l && lo >= 0xDC00 && lo <= 0xDFFF) { //followed by [0xDC00, 0xDFFF]
-                n += 4;
-            } else {
-                throw new Error("UCS-2 String malformed");
-            }
-        } else if (hi < 0xE000) { //[0xDC00, 0xDFFF]
-            throw new Error("UCS-2 String malformed");
-        } else { //[0xE000, 0xFFFF]
-            n += 3;
-        }
+export const _byteLength = (str: string) => {
+    let s = str.length;
+    for (let i = s - 1; i >= 0; --i) {
+        const code = str.charCodeAt(i);
+        if (code < 0x0080) continue;
+        if (code < 0x0800) ++s;
+        else if (code <= 0xFFFF) s += 2;
+        if (code >= 0xDC00 && code <= 0xDFFF) --i; //trail surrogate
     }
-    return n;
+
+    return s;
 };
 
-const _encodeInto = (buf: Uint8Array, str: string, offset = 0) => {
-    var c1, // character 1
-        c2; // character 2
+// export const byteLength = _native.Buffer
+//     ? ((str: string) => str.length < 60 ? _byteLength(str) : Buffer.byteLength(str))
+//     : _byteLength;
+
+export const byteLength = _native.byteLength
+    ? Buffer.byteLength
+    : _byteLength;
+
+export const _encodeInto = (buf: Uint8Array, str: string, offset = 0) => {
+    var c1,
+        c2;
     for (var i = 0; i < str.length; ++i) {
         c1 = str.charCodeAt(i);
         if (c1 < 128) {
@@ -57,14 +49,14 @@ const _encodeInto = (buf: Uint8Array, str: string, offset = 0) => {
     return offset;
 };
 
-export const encodeInto = _native.encoders.utf8.write ?
-    (buf: BinaryBuffer, str: string, offset = 0) => {
+export const encodeInto = _native.encoders.utf8.write
+    ? (buf: BinaryBuffer, str: string, offset = 0) => {
         if (str.length < 40) {
             return _encodeInto(buf, str, offset);
         }
         return buf.utf8Write(str, offset);
-    } :
-    _encodeInto;
+    }
+    : _encodeInto;
 
 export const encode = (s: string, units = Infinity) => {
     const bytes: number[] = [];
@@ -217,35 +209,38 @@ export const _decode = (buf: Uint8Array, start: number, end: number) => {
     return decodeCodePointsArray(codes);
 }
 
-const sd = _native.tryCreateStringDecoder('utf8');
-export const decode =
-    // (buf: BinaryBuffer, start: number, end: number) => buf.utf8Slice(start, end);
-    // _decode;
-    // (buf: BinaryBuffer, start: number, end: number) => sd.end(Buffer.from(buf.buffer, start, end - start));
-    sd ?
-    (_native.encoders.utf8.slice ?
-        (buf: BinaryBuffer, start: number, end: number) => {
-            if (end - start < 40) {
-                return _decode(buf, start, end);
-            }
-            if (end - start < 53) {
-                return buf.utf8Slice(start, end);
-            }
-            return sd.end(Buffer.from(buf.buffer, start, end - start));
-        } :
-        (buf: BinaryBuffer, start: number, end: number) => {
-            if (end - start < 53) {
-                return _decode(buf, start, end);
-            }
-            return sd.end(Buffer.from(buf.buffer, start, end - start));
-        }
-    ) :
-    (_native.encoders.utf8.slice ?
-        (buf: BinaryBuffer, start: number, end: number) => {
-            if (end - start < 40) {
-                return _decode(buf, start, end);
-            }
-            return buf.utf8Slice(start, end);
-        } :
-        _decode
-    );
+// const sd = _native.tryCreateStringDecoder('utf8');
+// export const decode =
+//     // (buf: BinaryBuffer, start: number, end: number) => buf.utf8Slice(start, end);
+//     // _decode;
+//     // (buf: BinaryBuffer, start: number, end: number) => sd.end(Buffer.from(buf.buffer, start, end - start));
+//     sd
+//     ? (_native.encoders.utf8.slice
+//         ? (buf: BinaryBuffer, start: number, end: number) => {
+//             if (end - start < 40) {
+//                 return _decode(buf, start, end);
+//             }
+//             if (end - start < 53) {
+//                 return buf.utf8Slice(start, end);
+//             }
+//             return sd.end(Buffer.from(buf.buffer, start, end - start));
+//         }
+//         : (buf: BinaryBuffer, start: number, end: number) => {
+//             if (end - start < 53) {
+//                 return _decode(buf, start, end);
+//             }
+//             return sd.end(Buffer.from(buf.buffer, start, end - start));
+//         }
+//     )
+//     : (_native.encoders.utf8.slice
+//         ? (buf: BinaryBuffer, start: number, end: number) => {
+//             if (end - start < 40) {
+//                 return _decode(buf, start, end);
+//             }
+//             return buf.utf8Slice(start, end);
+//         }
+//         : _decode
+//     );
+export const decode = _native.encoders.utf8.slice
+    ? (buf: BinaryBuffer, start: number, end: number) => buf.utf8Slice(start, end)
+    : _decode;
