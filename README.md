@@ -56,7 +56,7 @@ Also it supports `ascii` string encoding (it's faster and smaller than `utf8`) a
 | `Buffer<L>` | sizeof(L)+... | `Uint8Array` | `L` - typeof `length` |
 | `Enum<T>` | [1,2] | `T` | - |
 | `Const<T>` | 0 | `T` | Not encodes into buffer |
-| `Optional<T>` | 1+... | `T\|null` | `undefined` encodes as `null` |
+| `Optional<T>` | 1+... | `T\|null\|undefined` | `undefined` encodes as `null` |
 | `Aligned<T,A>` | [0,7]+... | `T` | Add trailing empty bytes for desired bytes align (`A`) (eg. for `C` struct compatibility) |
 | `UVarInt32` | [1, 5] | `number` | variable length unsigned int |
 | `VarInt32` | [1, 5] | `number` | variable length signed int |
